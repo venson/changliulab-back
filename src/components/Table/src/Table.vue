@@ -152,6 +152,7 @@
       'edit-change',
     ],
     setup(props, { emit }) {
+      // debugger;
       const deviceHeight = ref(150);
       const tableElRef = ref<ComponentRef>(null);
       const wrapRef = ref<Nullable<HTMLDivElement>>(null);
@@ -214,6 +215,7 @@
 
       //组装表格信息
       const getBindValues = computed(() => {
+        // debugger;
         const tableData = unref(getDataSourceRef);
         const maxHeight = tableData.length ? `${unref(deviceHeight)}px` : 'auto';
         return {
