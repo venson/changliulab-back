@@ -23,7 +23,7 @@
   import { useProjectSetting } from '@/hooks/setting/useProjectSetting';
 
   export default defineComponent({
-    name: 'Menu',
+    name: 'AsideMenu',
     components: {},
     props: {
       mode: {

@@ -9,8 +9,15 @@
         <img :src="websiteConfig.logo" alt="" />
         <h2 v-show="!collapsed" class="title">{{ websiteConfig.title }}</h2>
       </div>
-      <AsideMenu
+      <!-- <AsideMenu
         v-model:collapsed="collapsed"
+        v-model:location="getMenuLocation"
+        :inverted="getInverted"
+        mode="horizontal"
+      /> -->
+      <AsideMenu
+        :collapsed="collapsed"
+        @update:collapsed="$emit('update:collapsed')"
         v-model:location="getMenuLocation"
         :inverted="getInverted"
         mode="horizontal"
@@ -46,7 +53,7 @@
           <n-breadcrumb-item v-if="routeItem.meta.title">
             <n-dropdown
               v-if="routeItem.children.length"
-              :options="routeItem.children"
+              :options="processDropDowns(routeItem.children)"
               @select="dropdownSelect"
             >
               <span class="link-text">
@@ -71,8 +78,8 @@
     <div class="layout-header-right">
       <div
         class="layout-header-trigger layout-header-trigger-min"
-        v-for="item in iconList"
-        :key="item.icon.name"
+        v-for="(item, index) in iconList"
+        :key="index"
       >
         <n-tooltip placement="bottom">
           <template #trigger>
@@ -148,6 +155,7 @@
         type: Boolean,
       },
     },
+    emits: ['update:collapsed'],
     setup(props) {
       const userStore = useUserStore();
       const useLockscreen = useLockscreenStore();
@@ -194,6 +202,7 @@
       const router = useRouter();
       const route = useRoute();
 
+      const processDropDowns = (list: any[]) => list.filter((item) => !item.meta.hidden);
       const generator: any = (routerMap) => {
         return routerMap.map((item) => {
           const currentMenu = {
@@ -221,9 +230,12 @@
 
       // 刷新页面
       const reloadPage = () => {
-        router.push({
-          path: '/redirect' + unref(route).fullPath,
-        });
+        console.log(unref(route).fullPath);
+        router.go(0);
+        // router.push({
+        //   // path: '/redirect' + unref(route).fullPath,
+        //   path: `${unref(route).fullPath}`,
+        // });
       };
 
       // 退出登录
@@ -273,17 +285,17 @@
 
       // 图标列表
       const iconList = [
-        {
-          icon: 'SearchOutlined',
-          tips: '搜索',
-        },
-        {
-          icon: 'GithubOutlined',
-          tips: 'github',
-          eventObject: {
-            click: () => window.open('https://github.com/jekip/naive-ui-admin'),
-          },
-        },
+        // {
+        //   icon: 'SearchOutlined',
+        //   tips: '搜索',
+        // },
+        // {
+        //   icon: 'GithubOutlined',
+        //   tips: 'github',
+        //   eventObject: {
+        //     click: () => window.open('https://github.com/jekip/naive-ui-admin'),
+        //   },
+        // },
         {
           icon: 'LockOutlined',
           tips: '锁屏',
@@ -307,7 +319,8 @@
       const avatarSelect = (key) => {
         switch (key) {
           case 1:
-            router.push({ name: 'Setting' });
+            // router.push({ name: 'Setting' });
+            router.push({ path: '/acl/personalSetting' });
             break;
           case 2:
             doLogout();
@@ -328,6 +341,7 @@
         route,
         dropdownSelect,
         avatarOptions,
+        processDropDowns,
         getChangeStyle,
         avatarSelect,
         breadcrumbList,
