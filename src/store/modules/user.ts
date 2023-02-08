@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-this-alias */
 import { defineStore } from 'pinia';
 import { store } from '@/store';
 import { ACCESS_TOKEN, CURRENT_USER, IS_LOCKSCREEN } from '@/store/mutation-types';
@@ -7,17 +8,19 @@ import { getUserInfo, login } from '@/api/system/user';
 import { storage } from '@/utils/Storage';
 
 export interface IUserState {
+  id: string;
   token: string;
   username: string;
   welcome: string;
   avatar: string;
-  permissions: any[];
+  permissions: string[];
   info: any;
 }
 
 export const useUserStore = defineStore({
   id: 'app-user',
   state: (): IUserState => ({
+    id: '',
     token: storage.get(ACCESS_TOKEN, ''),
     username: '',
     welcome: '',
@@ -35,11 +38,14 @@ export const useUserStore = defineStore({
     getNickname(): string {
       return this.username;
     },
-    getPermissions(): [any][] {
+    getPermissions(): string[] {
       return this.permissions;
     },
     getUserInfo(): object {
       return this.info;
+    },
+    getId(): string {
+      return this.id;
     },
   },
   actions: {
@@ -55,18 +61,25 @@ export const useUserStore = defineStore({
     setUserInfo(info) {
       this.info = info;
     },
+    setUserName(username: string) {
+      this.username = username;
+    },
+    setId(id: string) {
+      this.id = id;
+    },
     // 登录
     async login(userInfo) {
       try {
         const response = await login(userInfo);
-        const { result, code } = response;
+        const { data, code } = response;
         if (code === ResultEnum.SUCCESS) {
           const ex = 7 * 24 * 60 * 60 * 1000;
-          storage.set(ACCESS_TOKEN, result.token, ex);
-          storage.set(CURRENT_USER, result, ex);
+          const bearerToken = 'Bearer ' + data.token;
+          storage.set(ACCESS_TOKEN, bearerToken, ex);
+          // storage.set(CURRENT_USER, data, ex);
           storage.set(IS_LOCKSCREEN, false);
-          this.setToken(result.token);
-          this.setUserInfo(result);
+          this.setToken(bearerToken);
+          // this.setUserInfo(data);
         }
         return Promise.resolve(response);
       } catch (e) {
@@ -80,15 +93,19 @@ export const useUserStore = defineStore({
       return new Promise((resolve, reject) => {
         getUserInfo()
           .then((res) => {
+            // console.log(res);
             const result = res;
-            if (result.permissions && result.permissions.length) {
-              const permissionsList = result.permissions;
+            res.id && that.setId(res.id);
+            res.username && that.setUserName(res.username);
+            // if (result.permissions && result.permissions.length) {
+            if (result.permissionValueList && result.permissionValueList.length) {
+              const permissionsList = result.permissionValueList;
               that.setPermissions(permissionsList);
               that.setUserInfo(result);
             } else {
               reject(new Error('getInfo: permissionsList must be a non-null array !'));
             }
-            that.setAvatar(result.avatar);
+            // that.setAvatar(result.avatar);
             resolve(res);
           })
           .catch((error) => {

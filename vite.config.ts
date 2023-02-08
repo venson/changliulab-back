@@ -5,6 +5,8 @@ import { wrapperEnv } from './build/utils';
 import { createVitePlugins } from './build/vite/plugin';
 import { OUTPUT_DIR } from './build/constant';
 import { createProxy } from './build/vite/proxy';
+// import wasm from 'vite-plugin-wasm';
+// import topLevelAwait from 'vite-plugin-top-level-await';
 import pkg from './package.json';
 import { format } from 'date-fns';
 const { dependencies, devDependencies, name, version } = pkg;

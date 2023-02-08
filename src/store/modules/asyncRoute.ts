@@ -2,7 +2,7 @@ import { toRaw, unref } from 'vue';
 import { defineStore } from 'pinia';
 import { RouteRecordRaw } from 'vue-router';
 import { store } from '@/store';
-import { asyncRoutes, constantRouter } from '@/router/index';
+import { asyncRoutes, constantRouter } from '@/router';
 import { generatorDynamicRouter } from '@/router/generator-routers';
 import { useProjectSetting } from '@/hooks/setting/useProjectSetting';
 
@@ -88,7 +88,7 @@ export const useAsyncRouteStore = defineStore({
     },
     async generateRoutes(data) {
       let accessedRouters;
-      const permissionsList = data.permissions || [];
+      const permissionsList = data.permissionList || [];
       const routeFilter = (route) => {
         const { meta } = route;
         const { permissions } = meta || {};
@@ -101,6 +101,8 @@ export const useAsyncRouteStore = defineStore({
         // 动态获取菜单
         try {
           accessedRouters = await generatorDynamicRouter();
+          // console.log('accessedRouters');
+          // console.log(accessedRouters);
         } catch (error) {
           console.log(error);
         }

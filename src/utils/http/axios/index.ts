@@ -51,19 +51,20 @@ const transform: AxiosTransform = {
       return res.data;
     }
 
-    const { data } = res;
+    // const { data } = res;
 
     const $dialog = window['$dialog'];
     const $message = window['$message'];
 
-    if (!data) {
+    if (!res.data) {
       // return '[HTTP] Request has no return value';
       throw new Error('请求出错，请稍候重试');
     }
     //  这里 code，result，message为 后台统一的字段，需要修改为项目自己的接口返回格式
-    const { code, result, message } = data;
+    const { code, data, message } = res.data;
     // 请求成功
-    const hasSuccess = data && Reflect.has(data, 'code') && code === ResultEnum.SUCCESS;
+    // const hasSuccess = data && Reflect.has(data, 'code') && code === ResultEnum.SUCCESS;
+    const hasSuccess = data && code === ResultEnum.SUCCESS;
     // 是否显示提示信息
     if (isShowMessage) {
       if (hasSuccess && (successMessageText || isShowSuccessMessage)) {
@@ -88,17 +89,26 @@ const transform: AxiosTransform = {
 
     // 接口请求成功，直接返回结果
     if (code === ResultEnum.SUCCESS) {
-      return result;
+      return data;
     }
     // 接口请求错误，统一提示错误信息 这里逻辑可以根据项目进行修改
     let errorMsg = message;
+    console.log(code);
     switch (code) {
       // 请求失败
       case ResultEnum.ERROR:
         $message.error(errorMsg);
         break;
       // 登录超时
-      case ResultEnum.TIMEOUT:
+      case ResultEnum.GATEWAY:
+        $message.error(errorMsg);
+        // $message.error('Server Error');
+        break;
+      // case ResultEnum.GATEWAY:
+      //   $message.error('Server Error');
+      case ResultEnum.TOKEN_EXPIRE:
+      case ResultEnum.TOKEN_ILLEGAL:
+      case ResultEnum.UNAUTHORIZED:
         const LoginName = PageEnum.BASE_LOGIN_NAME;
         const LoginPath = PageEnum.BASE_LOGIN;
         if (router.currentRoute.value?.name === LoginName) return;
@@ -106,7 +116,8 @@ const transform: AxiosTransform = {
         errorMsg = '登录超时，请重新登录!';
         $dialog.warning({
           title: '提示',
-          content: '登录身份已失效，请重新登录!',
+          // content: '登录身份已失效，请重新登录!',
+          content: `${errorMsg}，请重新登录!`,
           positiveText: '确定',
           //negativeText: '取消',
           closable: false,
@@ -118,13 +129,43 @@ const transform: AxiosTransform = {
           onNegativeClick: () => {},
         });
         break;
+      // default:
+      //   // case ResultEnum.TIMEOUT:
+      //   const LoginName = PageEnum.BASE_LOGIN_NAME;
+      //   const LoginPath = PageEnum.BASE_LOGIN;
+      //   if (router.currentRoute.value?.name === LoginName) return;
+      //   // 到登录页
+      //   errorMsg = '登录超时，请重新登录!';
+      //   $dialog.warning({
+      //     title: '提示',
+      //     // content: '登录身份已失效，请重新登录!',
+      //     content: `${errorMsg}，请重新登录!`,
+      //     positiveText: '确定',
+      //     //negativeText: '取消',
+      //     closable: false,
+      //     maskClosable: false,
+      //     onPositiveClick: () => {
+      //       storage.clear();
+      //       window.location.href = LoginPath;
+      //     },
+      //     onNegativeClick: () => {},
+      //   });
+      //   break;
     }
     throw new Error(errorMsg);
   },
 
   // 请求之前处理config
   beforeRequestHook: (config, options) => {
-    const { apiUrl, joinPrefix, joinParamsToUrl, formatDate, joinTime = true, urlPrefix } = options;
+    // const { apiUrl, joinPrefix, joinParamsToUrl, formatDate, joinTime = true, urlPrefix } = options;
+    const {
+      apiUrl,
+      joinPrefix,
+      joinParamsToUrl,
+      formatDate,
+      joinTime = false,
+      urlPrefix,
+    } = options;
 
     const isUrlStr = isUrl(config.url as string);
 
@@ -261,7 +302,7 @@ function createAxios(opt?: Partial<CreateAxiosOptions>) {
           // 接口拼接地址
           urlPrefix: urlPrefix,
           //  是否加入时间戳
-          joinTime: true,
+          joinTime: false,
           // 忽略重复请求
           ignoreCancelToken: true,
           // 是否携带token

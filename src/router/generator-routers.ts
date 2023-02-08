@@ -8,6 +8,7 @@ const Iframe = () => import('@/views/iframe/index.vue');
 const LayoutMap = new Map<string, () => Promise<typeof import('*.vue')>>();
 
 LayoutMap.set('LAYOUT', Layout);
+LayoutMap.set('Layout', Layout);
 LayoutMap.set('IFRAME', Iframe);
 
 /**
@@ -17,36 +18,40 @@ LayoutMap.set('IFRAME', Iframe);
  * @returns {*}
  */
 export const routerGenerator = (routerMap, parent?): any[] => {
-  return routerMap.map((item) => {
-    const currentRouter: any = {
-      // 路由地址 动态拼接生成如 /dashboard/workplace
-      path: `${(parent && parent.path) || ''}/${item.path}`,
-      // 路由名称，建议唯一
-      name: item.name || '',
-      // 该路由对应页面的 组件
-      component: item.component,
-      // meta: 页面标题, 菜单图标, 页面权限(供指令权限用，可去掉)
-      meta: {
-        ...item.meta,
-        label: item.meta.title,
-        icon: constantRouterIcon[item.meta.icon] || null,
-        permissions: item.meta.permissions || null,
-      },
-    };
+  return routerMap
+    .filter((item) => !item.hidden)
+    .map((item) => {
+      const currentRouter: any = {
+        // 路由地址 动态拼接生成如 /dashboard/workplace
+        path: `${(parent && parent.path) || ''}/${item.path}`,
+        // 路由名称，建议唯一
+        name: item.name || '',
+        // 该路由对应页面的 组件
+        component: item.component,
+        // meta: 页面标题, 菜单图标, 页面权限(供指令权限用，可去掉)
+        meta: {
+          ...item.meta,
+          // label: item.meta.title,
+          icon: constantRouterIcon[item.meta.icon] || null,
+          // permissions: item.meta.permissions || null,
+        },
+      };
 
-    // 为了防止出现后端返回结果不规范，处理有可能出现拼接出两个 反斜杠
-    currentRouter.path = currentRouter.path.replace('//', '/');
-    // 重定向
-    item.redirect && (currentRouter.redirect = item.redirect);
-    // 是否有子菜单，并递归处理
-    if (item.children && item.children.length > 0) {
-      //如果未定义 redirect 默认第一个子路由为 redirect
-      !item.redirect && (currentRouter.redirect = `${item.path}/${item.children[0].path}`);
-      // Recursion
-      currentRouter.children = routerGenerator(item.children, currentRouter);
-    }
-    return currentRouter;
-  });
+      // 为了防止出现后端返回结果不规范，处理有可能出现拼接出两个 反斜杠
+      currentRouter.path = currentRouter.path.replace('//', '/').replace('\\\\', '\\');
+      // 重定向
+      item.redirect && item.redirect !== 'noredirect' && (currentRouter.redirect = item.redirect);
+      // 是否有子菜单，并递归处理
+      if (item.children && item.children.length > 0) {
+        //如果未定义 redirect 默认第一个子路由为 redirect
+        !item.redirect &&
+          item.redirect !== 'noredirect' &&
+          (currentRouter.redirect = `${item.path}/${item.children[0].path}`);
+        // Recursion
+        currentRouter.children = routerGenerator(item.children, currentRouter);
+      }
+      return currentRouter;
+    });
 };
 
 /**
@@ -57,8 +62,10 @@ export const generatorDynamicRouter = (): Promise<RouteRecordRaw[]> => {
   return new Promise((resolve, reject) => {
     adminMenus()
       .then((result) => {
+        console.log('result', result);
         const routeList = routerGenerator(result);
         asyncImportRoute(routeList);
+        console.log('routeList', routeList);
 
         resolve(routeList);
       })

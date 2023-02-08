@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script lang="tsx">
   import { defineComponent, onBeforeMount } from 'vue';
   import { useRoute, useRouter } from 'vue-router';

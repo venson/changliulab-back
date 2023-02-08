@@ -1,11 +1,12 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="view-account">
     <div class="view-account-header"></div>
     <div class="view-account-container">
       <div class="view-account-top">
-        <div class="view-account-top-logo">
+        <!-- <div class="view-account-top-logo">
           <img :src="websiteConfig.loginImage" alt="" />
-        </div>
+        </div> -->
         <div class="view-account-top-desc">{{ websiteConfig.loginDesc }}</div>
       </div>
       <div class="view-account-form">
@@ -54,7 +55,7 @@
               登录
             </n-button>
           </n-form-item>
-          <n-form-item class="default-color">
+          <!-- <n-form-item class="default-color">
             <div class="flex view-account-other">
               <div class="flex-initial">
                 <span>其它登录方式</span>
@@ -77,7 +78,7 @@
                 <a href="javascript:">注册账号</a>
               </div>
             </div>
-          </n-form-item>
+          </n-form-item> -->
         </n-form>
       </div>
     </div>
@@ -90,7 +91,7 @@
   import { useUserStore } from '@/store/modules/user';
   import { useMessage } from 'naive-ui';
   import { ResultEnum } from '@/enums/httpEnum';
-  import { PersonOutline, LockClosedOutline, LogoGithub, LogoFacebook } from '@vicons/ionicons5';
+  import { PersonOutline, LockClosedOutline } from '@vicons/ionicons5';
   import { PageEnum } from '@/enums/pageEnum';
   import { websiteConfig } from '@/config/website.config';
   interface FormState {
@@ -106,13 +107,13 @@
 
   const formInline = reactive({
     username: 'admin',
-    password: '123456',
+    password: '111111',
     isCaptcha: true,
   });
 
   const rules = {
-    username: { required: true, message: '请输入用户名', trigger: 'blur' },
-    password: { required: true, message: '请输入密码', trigger: 'blur' },
+    username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+    password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
   };
 
   const userStore = useUserStore();
@@ -122,8 +123,8 @@
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    formRef.value.validate(async (errors) => {
-      if (!errors) {
+    formRef.value.validate(async (error) => {
+      if (!error) {
         const { username, password } = formInline;
         message.loading('登录中...');
         loading.value = true;
@@ -138,12 +139,12 @@
           message.destroyAll();
           if (code == ResultEnum.SUCCESS) {
             const toPath = decodeURIComponent((route.query?.redirect || '/') as string);
-            message.success('登录成功，即将进入系统');
+            message.success('Login Successed');
             if (route.name === LOGIN_NAME) {
               router.replace('/');
             } else router.replace(toPath);
           } else {
-            message.info(msg || '登录失败');
+            message.info(msg || 'Login Failed');
           }
         } finally {
           loading.value = false;
