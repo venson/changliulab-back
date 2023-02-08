@@ -5,7 +5,7 @@ import { http } from '@/utils/http/axios';
  */
 export function adminMenus() {
   return http.request({
-    url: '/menus',
+    url: '/auth/admin/index/menu',
     method: 'GET',
   });
 }
@@ -16,7 +16,7 @@ export function adminMenus() {
  */
 export function getMenuList(params?) {
   return http.request({
-    url: '/menu/list',
+    url: '/auth/admin/index/menu',
     method: 'GET',
     params,
   });
