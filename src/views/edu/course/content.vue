@@ -53,6 +53,8 @@
           <MdEditor
             v-show="CourseContentType.SECTION === content.type"
             v-model="content.markdown"
+            :edit-enable="content.id !== undefined"
+            :path="`course/${courseId}/${content.chapterId}`"
             @html="saveHtml"
           />
         </n-form>

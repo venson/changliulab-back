@@ -4,6 +4,7 @@
       ref="markdown"
       :value="modelValue"
       mode="split"
+      :uploadImages="saveImage"
       :plugins="plugins"
       @change="handleChange"
     />
@@ -56,6 +57,7 @@
   import 'katex/dist/katex.css';
   import { bytesToBase64 } from '@/utils/base64';
   import pako from 'pako';
+  import { getOssAuth, uploadToOss } from '@/api/oss/oss';
   const saveButtonDisabled = ref(false);
   const saveButtonContext = ref('Save');
   const requestButtonDisabled = ref(false);
@@ -64,6 +66,7 @@
     modelValue: { type: String, require: false, default: 'Please edit on the left window' },
     requestEnable: { type: Boolean, require: false, default: false },
     editEnable: Boolean,
+    path: { type: String, require: true, default: 'root' },
   });
   const message = useMessage();
   const emit = defineEmits(['update:modelValue', 'html', 'request']);
@@ -86,13 +89,38 @@
     } else {
       message.error('Please save before edit');
     }
-    // textnew = v;
   };
   const request = () => {
     emit('request');
   };
 
   const textEncoder = new TextEncoder();
+  const saveImage = async (files: File[]) => {
+    return getOssAuth(props.path).then((res) => {
+      if (files.length > 1) {
+        message.warning('One file limit for each upload. The first file will be upload ');
+      }
+      let formData = new FormData();
+      const timeMark = new Date().getTime();
+      const key = res.dir + '/' + timeMark + files[0].name;
+      console.log(key);
+      const newUrl = res.host + '/' + key;
+      formData.append('key', key);
+      formData.append('policy', res.policy);
+      formData.append('OSSAccessKeyId', res.accessId);
+      formData.append('success_action_status', '200');
+      formData.append('Signature', res.signature);
+      formData.append('file', files[0], files[0].name);
+      return uploadToOss(res.host, formData).then(() => {
+        return [
+          {
+            url: newUrl,
+            title: files[0].name,
+          },
+        ];
+      });
+    });
+  };
   const saveHtml = () => {
     if (props.editEnable) {
       saveButtonDisabled.value = true;
@@ -100,12 +128,7 @@
       const markdownDom = document.getElementsByClassName('bytemd-preview');
       const html = markdownDom[0].innerHTML;
       const htmlPako = pako.deflate(textEncoder.encode(html));
-      // let htmlBr = brotli.compress(textEncoder.encode(html));
-      // let base64HtmlBr = bytesToBase64(htmlBr);
       let base64HtmlBr = bytesToBase64(htmlPako);
-      // const uncompressed = pako.inflate(htmlPako, { to: 'string' });
-      // console.log('uncompressed', uncompressed);
-      // console.log(base64HtmlBr);
       emit('html', base64HtmlBr);
       setTimeout(() => {
         saveButtonDisabled.value = false;
@@ -120,6 +143,7 @@
   .bytemd {
     height: calc(100vh - 250px);
   }
+
   .n-layout .n-layout-scroll-container {
     overflow: visible;
     box-sizing: content-box;
